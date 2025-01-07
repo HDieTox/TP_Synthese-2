@@ -1,2 +1,4 @@
 #define ARGS_NUMBER 4
 #define BUFFER_SIZE 64
+#define DATA_BUFFER_SIZE 516
+#define IP_SIZE 128

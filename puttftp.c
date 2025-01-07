@@ -13,12 +13,9 @@
 int main(int argc, char const *argv[])
 {
     if (argc != ARGS_NUMBER){
-        fprintf(stderr,"Usage : gettftp <addr> <port> <filename>\n");
+        fprintf(stderr,"Usage : puttftp <addr> <port> <filename>\n");
         exit(EXIT_FAILURE);
     }
-
-    int file_descriptor = creat(argv[3],S_IRUSR | S_IWUSR);
-
 
     struct addrinfo *res;
     struct addrinfo hints;
@@ -40,31 +37,25 @@ int main(int argc, char const *argv[])
 
     int socket_descriptor = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
 
-    char RRQ[128] = {0};
-    RRQ[1] = 1;
-    sprintf(RRQ+2,"%s",argv[3]);
-    sprintf(RRQ+3+strlen(argv[3]),"octet");
+    char WRQ[128] = {0};
+    WRQ[1] = 2;
+    sprintf(WRQ+2,"%s",argv[3]);
+    sprintf(WRQ+3+strlen(argv[3]),"octet");
 
-    sendto(socket_descriptor,RRQ,strlen(argv[3])+9,0,res->ai_addr,res->ai_addrlen);
-
-    char buffer_data[DATA_BUFFER_SIZE] = {0};
+    sendto(socket_descriptor,WRQ,strlen(argv[3])+9,0,res->ai_addr,res->ai_addrlen);
 
     struct sockaddr data_connexion;
     socklen_t data_connexion_size;
     
-    int number_byte_received = recvfrom(socket_descriptor,buffer_data,sizeof(char)*DATA_BUFFER_SIZE,0,&data_connexion,&data_connexion_size);
-    
-    write(file_descriptor,buffer_data+4,number_byte_received-4);
-    
-    char ACK[4] = {0};
-    ACK[1] = 4;
-    ACK[2] = buffer_data[2];
-    ACK[3] = buffer_data[3];
+    char buffer_data[DATA_BUFFER_SIZE] = {0};
+    recvfrom(socket_descriptor,NULL,0,0,&data_connexion,&data_connexion_size);
 
-    sendto(socket_descriptor,ACK,4,0,&data_connexion,data_connexion_size);
+    int file_descriptor = open(argv[3],S_IRUSR);
+    read(file_descriptor,buffer_data+4,DATA_BUFFER_SIZE-4);
+    buffer_data[1] = 3;
+    buffer_data[3] = 1;
 
-    close(file_descriptor);
+    sendto(socket_descriptor,buffer_data,sizeof(char)*DATA_BUFFER_SIZE,0,&data_connexion,data_connexion_size);
 
-    freeaddrinfo(res);
     return 0;
 }
